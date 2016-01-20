@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+// Portions Copyright [2016] [C2B2 Consulting Limited]
 
 package com.sun.corba.ee.impl.orb ;
 
@@ -540,8 +541,10 @@ public class ORBImpl extends com.sun.corba.ee.spi.orb.ORB
         // parts of the initialization.
         setDebugFlags( configData.getORBDebugFlags() ) ;
         configDataParsingComplete( getORBData().getORBId() ) ;
-
-        initManagedObjectManager() ;
+        
+        if (!Boolean.parseBoolean( System.getProperty( "fish.payara.CORBA.SkipGmbalInit", "false" ) ) ){
+            initManagedObjectManager() ;
+        }
 
         // The TimerManager must be
         // initialized BEFORE the pihandler.initialize() call, in
@@ -609,8 +612,10 @@ public class ORBImpl extends com.sun.corba.ee.spi.orb.ORB
 
         // Now the ORB is ready, so finish all of the MBean registration
         if (configData.registerMBeans()) {
-            mom.resumeJMXRegistration() ;
-            mbeansRegistereed( getORBData().getORBId() ) ;
+            if (mom != null) {
+                mom.resumeJMXRegistration() ;
+                mbeansRegistereed( getORBData().getORBId() ) ;
+            }
         }
     }
 
