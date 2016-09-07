@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.transport;
 
@@ -58,6 +59,8 @@ import java.util.Set;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class TransportTestBase {
     private OrbFake orb = createStrictStub(OrbFake.class);
@@ -407,6 +410,11 @@ public class TransportTestBase {
             return numToWrite;
         }
 
+        @Override
+        public SocketAddress getLocalAddress() throws IOException {
+            return InetSocketAddress.createUnresolved("localhost", 1);
+        }
+        
         @Override
         protected void implConfigureBlocking(boolean block) throws IOException {
             if (failConfigureBlocking)
