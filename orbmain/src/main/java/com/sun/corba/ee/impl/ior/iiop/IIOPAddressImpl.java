@@ -26,7 +26,6 @@ public final class IIOPAddressImpl extends IIOPAddressBase
 
     private String host;
     private int port;
-    private boolean isLocalServer = false;
     
     public IIOPAddressImpl( String host, int port ) 
     {
@@ -40,7 +39,6 @@ public final class IIOPAddressImpl extends IIOPAddressBase
 
     public IIOPAddressImpl( InputStream is )
     {
-        isLocalServer = is.read_boolean();
         host = is.read_string() ;
         short thePort = is.read_short() ;
         port = shortToInt( thePort ) ;
@@ -56,10 +54,5 @@ public final class IIOPAddressImpl extends IIOPAddressBase
     public int getPort()
     {
         return port ;
-    }
-    
-    @Override
-    public boolean isLocalServer() {
-        return isLocalServer;
-    }
+    }    
 }

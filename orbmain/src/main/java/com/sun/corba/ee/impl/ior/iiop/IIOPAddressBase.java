@@ -40,14 +40,9 @@ abstract class IIOPAddressBase implements IIOPAddress
         return value ;
     }
     
-    protected boolean isLocalServer() {
-        return false;
-    }
-
     @Override
     public void write( OutputStream os )
     {
-        os.write_boolean(isLocalServer());
         os.write_string( getHost() ) ;
         int port = getPort() ;
         os.write_short( intToShort( port ) ) ;
@@ -74,6 +69,6 @@ abstract class IIOPAddressBase implements IIOPAddress
     @Override
     public String toString()
     {
-        return String.format("IIOPAddress%s[%s, %d]", isLocalServer()? "(local)" : "", getHost(), getPort());
+        return String.format("IIOPAddress[%s, %d]", getHost(), getPort());
     }
 }
