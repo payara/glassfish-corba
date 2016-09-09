@@ -7,12 +7,12 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.ior.iiop;
 
 import org.omg.CORBA_2_3.portable.InputStream ;
 
-import com.sun.corba.ee.spi.orb.ORB ;
 
 import com.sun.corba.ee.spi.logging.IORSystemException ;
 
@@ -26,6 +26,7 @@ public final class IIOPAddressImpl extends IIOPAddressBase
 
     private String host;
     private int port;
+    private boolean isLocalServer = false;
     
     public IIOPAddressImpl( String host, int port ) 
     {
@@ -39,18 +40,26 @@ public final class IIOPAddressImpl extends IIOPAddressBase
 
     public IIOPAddressImpl( InputStream is )
     {
+        isLocalServer = is.read_boolean();
         host = is.read_string() ;
         short thePort = is.read_short() ;
         port = shortToInt( thePort ) ;
     }
 
+    @Override
     public String getHost()
     {
         return host ;
     }
 
+    @Override
     public int getPort()
     {
         return port ;
+    }
+    
+    @Override
+    public boolean isLocalServer() {
+        return isLocalServer;
     }
 }
