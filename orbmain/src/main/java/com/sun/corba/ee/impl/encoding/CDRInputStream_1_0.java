@@ -37,6 +37,7 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 /*
  * Licensed Materials - Property of IBM
@@ -133,6 +134,8 @@ import com.sun.org.omg.SendingContext.CodeBase;
 import com.sun.corba.ee.impl.misc.ClassInfoCache ;
 
 import com.sun.corba.ee.spi.trace.* ;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.glassfish.pfl.tf.spi.annotation.InfoMethod;
 
 @CdrRead
@@ -711,6 +714,10 @@ public class CDRInputStream_1_0 extends CDRInputStreamBase
                         isIDLInterface, codeBase, (Class<?>) null,
                         (ClassLoader) null);
                 } catch (Exception exc) {
+                    Logger.getLogger(getClass().getName())
+                            .log(Level.FINE,
+                             String.format("Error Creating Stub Factory: ClassName = %s, sff = %s, codeBase = %s",
+                                     className, sff != null? sff.getClass().getName() : "<null>", codeBase), exc);
                     stubFactory = null;
                 }
             }
