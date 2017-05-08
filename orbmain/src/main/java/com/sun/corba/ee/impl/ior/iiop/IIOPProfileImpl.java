@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
+// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.ior.iiop;
 
@@ -309,6 +309,11 @@ public class IIOPProfileImpl extends IdentifiableBase implements IIOPProfile
         }
 
         return cachedIsLocal ;
+    }
+
+    @Override
+    public boolean isStale() {
+        return IIOPAddressImplLocalServer.isStale(getTaggedProfileTemplate());
     }
 
     private boolean isForeignObject() {
