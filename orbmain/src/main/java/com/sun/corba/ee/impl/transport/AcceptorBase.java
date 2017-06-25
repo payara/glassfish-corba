@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
+// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.transport;
 
@@ -140,7 +140,7 @@ public abstract class AcceptorBase
         if (iterator.hasNext()) {
             // NEVER create an AlternateIIOPAddress for an SSL acceptor!
             if (!type.startsWith( SocketInfo.SSL_PREFIX )) {
-                IIOPAddress iiopAddress = IIOPFactories.makeIIOPAddressLocalServer(hname, port);
+                IIOPAddress iiopAddress = IIOPFactories.makeIIOPAddressLocalServer(orb, hname, port);
                 AlternateIIOPAddressComponent iiopAddressComponent = 
                     IIOPFactories.makeAlternateIIOPAddressComponent(iiopAddress);
                 while (iterator.hasNext()) {
@@ -167,7 +167,7 @@ public abstract class AcceptorBase
             templatePort = orb.getLegacyServerSocketManager()
                 .legacyGetPersistentServerPort(SocketInfo.IIOP_CLEAR_TEXT);
         }
-        IIOPAddress addr = IIOPFactories.makeIIOPAddressLocalServer(hostname, 
+        IIOPAddress addr = IIOPFactories.makeIIOPAddressLocalServer(orb, hostname,
             templatePort);
         IIOPProfileTemplate iiopProfile = IIOPFactories.makeIIOPProfileTemplate(orb, 
             version, addr);

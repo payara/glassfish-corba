@@ -7,7 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
+// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.spi.ior.iiop ;
 
@@ -266,12 +266,13 @@ public abstract class IIOPFactories {
     /**
      * Overridable on Tx (Thread-local) basis
      * 
+     * @param orb
      * @param host
      * @param port
      * @return IIOP Address
      */
-    public static IIOPAddress makeIIOPAddressLocalServer(String host, int port) {
-        return new IIOPAddressImplLocalServer(host, port);
+    public static IIOPAddress makeIIOPAddressLocalServer(ORB orb, String host, int port) {
+        return isInitialHostSpecified(orb)? new IIOPAddressImpl(host, port) : new IIOPAddressImplLocalServer(host, port);
     }
 
     public static IIOPAddress makeIIOPAddress(InputStream is) {
@@ -281,11 +282,15 @@ public abstract class IIOPFactories {
     public static IIOPAddress makeIIOPAddress( InputStream is, ORB orb ) 
     {
         IIOPAddressImpl impl = new IIOPAddressImpl(is);
-        if(orb.isLocalHost(impl.getHost())) {
+        if(isInitialHostSpecified(orb) && orb.isLocalHost(impl.getHost())) {
             return new IIOPAddressImplLocalServer(impl);
         }
         else {
             return impl;
         }
+    }
+
+    static boolean isInitialHostSpecified(ORB orb) {
+        return !orb.getORBData().getListenOnAllInterfaces();
     }
 }
