@@ -1,2 +1,10 @@
 .hg/
 /orbmain/target/
+.gitignore.swp
+csiv2-idl/target/
+exception-annotation-processor/target/
+functional-tests/target/
+idlj/target/
+internal-api/target/
+omgapi/target/
+test/run/
