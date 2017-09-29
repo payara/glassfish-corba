@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Payara Foundation. All rights reserved.
+ * Copyright (c) 2016-2017 Payara Foundation. All rights reserved.
  *
  * The contents of this file are subject to the terms of the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
@@ -104,23 +104,34 @@ public class ThreadPoolImpl extends AbstractThreadPool implements ThreadPool {
      * @param tg
      * @param defaultClassLoader
      */
-    public ThreadPoolImpl( int minSize, int maxSize, long timeout, 
+    public ThreadPoolImpl( int minSize, int maxSize, final long timeout,
         String threadpoolName, ThreadGroup tg, ClassLoader defaultClassLoader ) 
     {
         queue = new WorkQueueImpl(this);
         name = threadpoolName;
         this.tg = tg;
         this.classLoader = defaultClassLoader;
-        minSize = Math.max(minSize, DEFAULT_MINIMUM_THREAD_POOL / 2);
-        maxSize = Math.max(DEFAULT_MINIMUM_THREAD_POOL, maxSize);
-        
-        threadPool = new ThreadPoolExecutor(minSize, maxSize, timeout, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(Math.max(maxSize * 100, Integer.MAX_VALUE)),
-                new ORBThreadFactory(name, tg, defaultClassLoader, false));
+        final int _minSize = Math.max(minSize, DEFAULT_MINIMUM_THREAD_POOL / 2);
+        final int _maxSize = Math.max(DEFAULT_MINIMUM_THREAD_POOL, maxSize);
+
+        if(System.getSecurityManager() == null) {
+            threadPool = createTPE(_minSize, _maxSize, timeout);
+        } else {
+            threadPool = AccessController.doPrivileged(new PrivilegedAction<ThreadPoolExecutor>() {
+                @Override
+                public ThreadPoolExecutor run() {
+                    return createTPE(_minSize, _maxSize, timeout);
+                }
+            });
+        }
         // TODO register with gmbal
     }
 
-    
+    private ThreadPoolExecutor createTPE(int minSize, int maxSize, long timeout) {
+        return new PayaraThreadPoolExecutor(minSize, maxSize, timeout, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(), new ORBThreadFactory(name, tg, classLoader, false));
+    }
+
     static class ORBThreadFactory implements ThreadFactory {
         ORBThreadFactory(String name, ThreadGroup group, ClassLoader classLoader, boolean isLongRunning) {
             this.group = group;
@@ -145,8 +156,8 @@ public class ThreadPoolImpl extends AbstractThreadPool implements ThreadPool {
         private Thread newThreadHelper(Runnable r, ClassLoader cl) {
             Thread t = new Thread(group, r, String.format("%s-%d", namePrefix, threadNumber.getAndIncrement()), 0);
             t.setContextClassLoader(cl);
-            if (t.isDaemon()) {
-                t.setDaemon(false);
+            if (!group.isDaemon()) {
+                t.setDaemon(true);
             }
             if (t.getPriority() != Thread.NORM_PRIORITY) {
                 t.setPriority(Thread.NORM_PRIORITY);
