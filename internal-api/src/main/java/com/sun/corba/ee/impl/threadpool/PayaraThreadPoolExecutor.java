@@ -39,121 +39,95 @@
  */
 package com.sun.corba.ee.impl.threadpool;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.TransferQueue;
+import lombok.experimental.Delegate;
 
 /**
- * This class provides a more suitable implementation of ThreadPoolExecutor
+ * This class provides a more suitable implementation of ThreadPoolExecutor.
  * Stock implementation prefers to queue workers when current threads >= core
- * threads however, this implementation will go up to the max threads first,
- * then will start to queue work items
+ * threads, however, this implementation will prefer to start more threads, if all threads are busy
+ * and pool is not completely allocated.
  *
- * This will provide something that's as close to the previous implementation as
- * possible
  *
+ * This will provide something that's as close to the previous CORBA
+ * thread pool implementation as possible without deadlocks present
+ * in the old thread pool implementation.
+ *
+ * @author pdudits
  * @author lprimak
+ *
+ * @see <a href="https://dzone.com/articles/scalable-java-thread-pool-executor">Article describing this approach (Workaround #2)</a>
  */
 public class PayaraThreadPoolExecutor extends ThreadPoolExecutor {
-    public PayaraThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, BlockingQueue<Runnable> workQueue, ThreadFactory factory) {
-        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, factory);
-        try {
-            Field ctlField = ThreadPoolExecutor.class.getDeclaredField("ctl");
-            ctlField.setAccessible(true);
-            ctl = (AtomicInteger) ctlField.get(this);
-
-            Field capacityField = ThreadPoolExecutor.class.getDeclaredField("CAPACITY");
-            capacityField.setAccessible(true);
-            this.CAPACITY = (Integer) capacityField.get(this);
-            
-            Field shutdownField = ThreadPoolExecutor.class.getDeclaredField("SHUTDOWN");
-            shutdownField.setAccessible(true);
-            this.SHUTDOWN = (Integer) shutdownField.get(this);
-
-            addWorkerMethod = ThreadPoolExecutor.class.getDeclaredMethod("addWorker", Runnable.class, boolean.class);
-            addWorkerMethod.setAccessible(true);
-
-            rejectMethod = ThreadPoolExecutor.class.getDeclaredMethod("reject", Runnable.class);
-            rejectMethod.setAccessible(true);
-        } catch (ReflectiveOperationException ex) {
-            log.log(Level.SEVERE, "Cannot get parent class' fields", ex);
-            throw new IllegalStateException(ex);
-        }
+    public PayaraThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit, ThreadFactory factory) {
+        super(corePoolSize, maximumPoolSize, keepAliveTime, unit, new WorkItemQueue(), factory);
+        this.queue = (WorkItemQueue) super.getQueue();
+        RejectedExecutionHandler defaultHandler = super.getRejectedExecutionHandler();
+        super.setRejectedExecutionHandler(rejectionHandler);
+        rejectionHandler.downstream = defaultHandler;
     }
 
-    /**
-     * taken from it's parent class
-     * reversed the order of operations,
-     * so threads up to maximum are created, before starting to queue
-     * 
-     * @param command
-     */
     @Override
-    public void execute(Runnable command) {
-        if (command == null) {
-            throw new NullPointerException();
-        }
+    public void setRejectedExecutionHandler(RejectedExecutionHandler rejectedExecutionHandler) {
+       rejectionHandler.downstream = Objects.requireNonNull(rejectedExecutionHandler);
+    }
 
-        int c = ctl.get();
-        // first try to add thread to the core thread pool
-        if (workerCountOf(c) < getCorePoolSize()) {
-            if (addWorker(command, true)) {
-                return;
+    @Override
+    public RejectedExecutionHandler getRejectedExecutionHandler() {
+        return rejectionHandler.downstream;
+    }
+
+    private class QueueingRejectionHandler implements RejectedExecutionHandler {
+        @Override
+        public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+            if (!putToQueue(runnable) && downstream != null) {
+                downstream.rejectedExecution(runnable, threadPoolExecutor);
             }
         }
-        // otherwise, try the non-core threads
-        if (addWorker(command, false)) {
-            return;
+
+        private RejectedExecutionHandler downstream;
+    }
+
+    private boolean putToQueue(Runnable runnable) {
+        // Our queue is unbounded, so this likely won't fail.
+        // but we shouldn't add more items when we're shutting down.
+        return !isTerminating() && !isShutdown() && queue.add(runnable);
+    }
+
+    private static class WorkItemQueue implements BlockingQueue<Runnable> {
+        @Override
+        public boolean offer(Runnable runnable) {
+            // to completement logic of ThreadPoolExecutor, we only succeed offering if there is a consumer to pass to.
+            // rejection handler will add the task to the queue
+            return delegate.tryTransfer(runnable);
         }
-        c = ctl.get();
-        // now try to queue
-        if (isRunning(c) && getQueue().offer(command)) {
-            int recheck = ctl.get();
-            if (!isRunning(recheck) && remove(command)) {
-                reject(command);
-            } else if (workerCountOf(recheck) == 0) {
-                addWorker(null, false);
-            }
+
+        @Override
+        public boolean offer(Runnable runnable, long l, TimeUnit timeUnit) throws InterruptedException {
+            return delegate.tryTransfer(runnable, l, timeUnit);
         }
-    }
 
-    private int workerCountOf(int c) {
-        return c & CAPACITY;
-    }
 
-    private boolean addWorker(Runnable command, boolean b) {
-        try {
-            return (Boolean) addWorkerMethod.invoke(this, command, b);
-        } catch (ReflectiveOperationException ex) {
-            log.log(Level.SEVERE, "Cannot call addWorker()", ex);
-            throw new IllegalStateException(ex);
+        private interface Excludes {
+            boolean offer(Runnable runnable);
+            boolean offer(Runnable runnable, long l, TimeUnit timeUnit) throws InterruptedException;
         }
-    }
 
-    private boolean isRunning(int c) {
-        return c < SHUTDOWN;
-    }
+        private interface RunnableTransferQueue extends BlockingQueue<Runnable>, TransferQueue<Runnable>, Queue<Runnable>, Collection<Runnable> { }
 
-    private void reject(Runnable command) {
-        try {
-            rejectMethod.invoke(this, command);
-        } catch (ReflectiveOperationException ex) {
-            log.log(Level.SEVERE, "Cannot call rejectMethod()", ex);
-            throw new IllegalStateException(ex);
-        }
+        private final @Delegate(excludes = Excludes.class, types = RunnableTransferQueue.class) TransferQueue<Runnable> delegate = new LinkedTransferQueue<Runnable>();
     }
 
 
-    private final AtomicInteger ctl;
-    private final int CAPACITY;
-    private final int SHUTDOWN;
-    private final Method addWorkerMethod;
-    private final Method rejectMethod;
-    private static final Logger log = Logger.getLogger(PayaraThreadPoolExecutor.class.getName());
+    private final WorkItemQueue queue;
+    private final QueueingRejectionHandler rejectionHandler = new QueueingRejectionHandler();
 }
