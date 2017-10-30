@@ -38,6 +38,8 @@ package com.sun.corba.ee.impl.transport;
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
+
 import com.sun.corba.ee.impl.encoding.CDRInputObject;
 import com.sun.corba.ee.impl.orb.ORBVersionImpl;
 import com.sun.corba.ee.impl.orb.ObjectKeyCacheEntryImpl;
@@ -86,6 +88,8 @@ import java.util.Set;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 public class TransportTestBase {
     private OrbFake orb = createStrictStub(OrbFake.class);
@@ -431,6 +435,11 @@ public class TransportTestBase {
         }
 
         @Override
+        public SocketAddress getLocalAddress() throws IOException {
+            return InetSocketAddress.createUnresolved("localhost", 1);
+        }
+        
+        @Override
         protected void implConfigureBlocking(boolean block) throws IOException {
             if (failConfigureBlocking)
                 throw new IOException("Test failure to configure blocking");
@@ -520,6 +529,10 @@ public class TransportTestBase {
 
         @Override
         public void addWork(Work aWorkItem) {
+            items.offer(aWorkItem);
+        }
+        @Override
+        public void addWork(Work aWorkItem, boolean isLongRunning) {
             items.offer(aWorkItem);
         }
     }

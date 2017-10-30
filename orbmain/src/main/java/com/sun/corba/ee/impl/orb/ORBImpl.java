@@ -37,6 +37,7 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+// Portions Copyright [2016] [C2B2 Consulting Limited]
 
 package com.sun.corba.ee.impl.orb ;
 
@@ -154,6 +155,9 @@ import com.sun.corba.ee.impl.javax.rmi.CORBA.Util;
 import com.sun.corba.ee.impl.misc.ByteArrayWrapper;
 import com.sun.corba.ee.spi.trace.OrbLifeCycle;
 import com.sun.corba.ee.spi.trace.Subcontract;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import org.glassfish.pfl.basic.algorithm.ObjectUtility;
@@ -570,8 +574,10 @@ public class ORBImpl extends com.sun.corba.ee.spi.orb.ORB
         // parts of the initialization.
         setDebugFlags( configData.getORBDebugFlags() ) ;
         configDataParsingComplete( getORBData().getORBId() ) ;
-
-        initManagedObjectManager() ;
+        
+        if (!Boolean.parseBoolean( System.getProperty( "fish.payara.CORBA.SkipGmbalInit", "false" ) ) ){
+            initManagedObjectManager() ;
+        }
 
         // The TimerManager must be
         // initialized BEFORE the pihandler.initialize() call, in
@@ -639,8 +645,10 @@ public class ORBImpl extends com.sun.corba.ee.spi.orb.ORB
 
         // Now the ORB is ready, so finish all of the MBean registration
         if (configData.registerMBeans()) {
-            mom.resumeJMXRegistration() ;
-            mbeansRegistereed( getORBData().getORBId() ) ;
+            if (mom != null) {
+                mom.resumeJMXRegistration() ;
+                mbeansRegistereed( getORBData().getORBId() ) ;
+            }
         }
     }
 
@@ -1745,7 +1753,26 @@ public class ORBImpl extends com.sun.corba.ee.spi.orb.ORB
     public boolean isLocalHost( String hostName ) 
     {
         return hostName.equals( configData.getORBServerHost() ) ||
-            hostName.equals( getLocalHostName() ) ;
+            hostName.equals( getLocalHostName() ) || getAllLocalAddresses().contains(hostName);
+    }
+    
+    private final List<String> localAddrs = new ArrayList<String>();
+    
+    private List<String> getAllLocalAddresses() {
+        if(localAddrs.isEmpty()) {
+            try {
+                Enumeration<NetworkInterface> ni = NetworkInterface.getNetworkInterfaces();
+                while (ni.hasMoreElements()) {
+                    Enumeration<InetAddress> addresses = ni.nextElement().getInetAddresses();
+                    while (addresses.hasMoreElements()) {
+                        localAddrs.add(addresses.nextElement().getHostAddress());
+                    }
+                }
+            } catch (SocketException ex) {
+                // ignore
+            }
+        }
+        return localAddrs;
     }
 
     @Subcontract
