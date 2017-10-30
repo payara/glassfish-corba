@@ -37,12 +37,12 @@
  * only if the new code is made subject to such option by the copyright
  * holder.
  */
+// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.ior.iiop;
 
 import org.omg.CORBA_2_3.portable.InputStream ;
 
-import com.sun.corba.ee.spi.orb.ORB ;
 
 import com.sun.corba.ee.spi.logging.IORSystemException ;
 
@@ -74,13 +74,15 @@ public final class IIOPAddressImpl extends IIOPAddressBase
         port = shortToInt( thePort ) ;
     }
 
+    @Override
     public String getHost()
     {
         return host ;
     }
 
+    @Override
     public int getPort()
     {
         return port ;
-    }
+    }    
 }
