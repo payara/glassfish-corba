@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2018 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 Payara Foundation and/or its affiliates.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Distribution License v. 1.0, which is available at
@@ -282,7 +283,7 @@ abstract public class ORB {
             if (className == null)
                 className = defaultORBSingleton;
 
-            singleton = create_impl_with_systemclassloader(className);
+            singleton = create_impl(className);
         }
         return singleton;
     }
