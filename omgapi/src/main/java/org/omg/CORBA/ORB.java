@@ -2,6 +2,7 @@
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  * 
  * Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019 [Payara Foundation and/or its affiliates.]
  * 
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -312,42 +313,26 @@ abstract public class ORB {
             if (className == null)
                 className = defaultORBSingleton;
 
-            singleton = create_impl_with_systemclassloader(className);
+            singleton = create_impl(className);
         }
         return singleton;
     }
     
-    private static ORB create_impl_with_systemclassloader(String className) {
-        try {
-            checkPackageAccess(className);
-            ClassLoader cl = ClassLoader.getSystemClassLoader();
-            Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
-            Class<?> singletonOrbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
-            return (ORB)singletonOrbClass.newInstance();
-        } catch (Throwable ex) {
-            SystemException systemException = new INITIALIZE(
-                "can't instantiate default ORB implementation " + className);
-            systemException.initCause(ex);
-            throw systemException;
-        }
-
-    }
-
     private static ORB create_impl(String className) {
-        
+
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         if (cl == null) {
             cl = ClassLoader.getSystemClassLoader();
         }
 
         try {
-        	checkPackageAccess(className);
-        	Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
-        	Class<?> orbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
+            checkPackageAccess(className);
+            Class<org.omg.CORBA.ORB> orbBaseClass = org.omg.CORBA.ORB.class;
+            Class<?> orbClass = Class.forName(className, true, cl).asSubclass(orbBaseClass);
             return (ORB) orbClass.newInstance();
         } catch (Throwable ex) {
             SystemException systemException = new INITIALIZE(
-               "can't instantiate default ORB implementation " + className);
+                    "can't instantiate default ORB implementation " + className);
             systemException.initCause(ex);
             throw systemException;
         }
