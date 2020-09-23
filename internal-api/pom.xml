@@ -15,7 +15,7 @@
     <parent>
         <artifactId>glassfish-corba</artifactId>
         <groupId>org.glassfish.corba</groupId>
-        <version>4.2.1</version>
+        <version>4.2.1.payara-p1</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,6 +33,17 @@
           <groupId>org.glassfish.pfl</groupId>
           <artifactId>pfl-basic</artifactId>
           <version>${pfl-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.16.18</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

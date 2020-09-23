@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+// Portions Copyright [2016] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.protocol;
 
@@ -68,12 +69,14 @@ import com.sun.corba.ee.impl.encoding.CDRInputObject;
 import com.sun.corba.ee.impl.encoding.CDROutputObject;
 import com.sun.corba.ee.impl.encoding.EncapsOutputStream;
 import com.sun.corba.ee.impl.encoding.OutputStreamFactory;
+import com.sun.corba.ee.impl.ior.iiop.IIOPAddressImplLocalServer;
 import com.sun.corba.ee.spi.logging.ORBUtilSystemException;
 import com.sun.corba.ee.spi.logging.InterceptorsSystemException;
 import com.sun.corba.ee.spi.misc.ORBConstants;
 import com.sun.corba.ee.impl.misc.ORBUtility;
 import com.sun.corba.ee.spi.trace.Subcontract;
 import com.sun.corba.ee.spi.trace.Transport;
+import java.net.InetSocketAddress;
 import org.glassfish.pfl.tf.spi.annotation.InfoMethod;
 
 /**
@@ -462,7 +465,16 @@ public class MessageMediatorImpl
     @Transport
     public boolean dispatch() {
         reportConnection( connection ) ;
-
+        if(connection.hasSocketChannel()) {
+            try {
+                InetSocketAddress connAddr = (InetSocketAddress) connection.getSocketChannel().getLocalAddress();
+                IIOPAddressImplLocalServer.setHostOverride(connAddr.getHostString());
+            }
+            catch(IOException ex) {
+                throw wrapper.ioexceptionWhenReadingConnection(ex, connection);            
+            }
+        }
+        
         try {
             boolean result = getProtocolHandler().handleRequest(this);
             return result;
@@ -484,6 +496,9 @@ public class MessageMediatorImpl
                 reportException("Exception in sendMessageError", ex);
             }
             connection.purgeCalls(wrapper.connectionAbort(ex), false, false);
+        }
+        finally {
+            IIOPAddressImplLocalServer.removeHostOverride();
         }
         return true;
     }
@@ -2022,7 +2037,7 @@ public class MessageMediatorImpl
         // not really necessary.
         return messageMediator;
     }
-
+    
     @Subcontract
     protected void runServantPostInvoke(MessageMediator messageMediator) {
         // Run ServantLocator::postinvoke.  This may cause a SystemException

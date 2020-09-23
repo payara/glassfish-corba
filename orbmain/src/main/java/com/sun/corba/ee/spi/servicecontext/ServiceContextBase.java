@@ -7,6 +7,7 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
+// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.spi.servicecontext;
 
@@ -69,14 +70,18 @@ public abstract class ServiceContextBase {
     /** Returns Service context id.  Must be overloaded in subclass.
      */
     public abstract int getId() ;
+    public boolean isStale() {
+        return false;
+    }
 
     /** Write the service context to an output stream.  This method 
      * must be used for writing the service context to a request or reply
      * header.
      */
     public synchronized void write(OutputStream s, GIOPVersion gv) throws SystemException {
-        if (data == null) {
-            EncapsOutputStream os = OutputStreamFactory.newEncapsOutputStream((ORB)(s.orb()), gv);   
+        boolean isStale = isStale();
+        if (data == null || isStale) {
+            EncapsOutputStream os = OutputStreamFactory.newEncapsOutputStream((ORB)(s.orb()), gv);
             try {
                 os.putEndian();
                 writeData(os);
@@ -89,9 +94,16 @@ public abstract class ServiceContextBase {
                 }
             }
         }
-        s.write_long(getId());
-        s.write_long(data.length);
-        s.write_octet_array(data, 0, data.length);
+        try {
+            s.write_long(getId());
+            s.write_long(data.length);
+            s.write_octet_array(data, 0, data.length);
+        }
+        finally {
+            if(isStale) {
+                data = null;
+            }
+        }
     }
 
     /** Writes the data used to represent the subclasses service context

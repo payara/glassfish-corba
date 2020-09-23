@@ -15,7 +15,7 @@
     <parent>
         <groupId>org.glassfish.corba</groupId>
         <artifactId>glassfish-corba</artifactId>
-        <version>4.2.1</version>
+        <version>4.2.1.payara-p1</version>
     </parent>
 
     <artifactId>glassfish-corba-orb</artifactId>
@@ -114,7 +114,8 @@
                             com.sun.corba.ee.impl.oa.*; version=1,
                             com.sun.corba.ee.impl.orb; version=1,
                             com.sun.corba.ee.impl.presentation.*; version=1,
-                            com.sun.corba.ee.impl.txpoa; version=1
+                            com.sun.corba.ee.impl.txpoa; version=1,
+                            com.sun.jndi.cosnaming; version=1
                         </Export-Package>
                     </instructions>
                 </configuration>
