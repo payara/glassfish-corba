@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016] [C2B2 Consulting Limited]
 
 package com.sun.corba.ee.impl.transport;
 
@@ -65,9 +64,7 @@ public class TransportManagerImpl
         outboundConnectionCaches = new HashMap<String,OutboundConnectionCache>();
         inboundConnectionCaches = new HashMap<String,InboundConnectionCache>();
         selector = new SelectorImpl(orb);
-        if (orb.mom() != null) {
-            orb.mom().register( orb, this ) ;
-        }
+        orb.mom().register( orb, this ) ;
     }
 
     public ByteBufferPool getByteBufferPool(int id)
@@ -93,9 +90,7 @@ public class TransportManagerImpl
 
                         // We need to clean up the multi-cache support:
                         // this really only works with a single cache.
-                        if (orb.mom() != null) {
-                            orb.mom().register( this, connectionCache ) ;
-                        }
+                        orb.mom().register( this, connectionCache ) ;
                         StatsProviderManager.register( "orb", PluginPoint.SERVER,
                             "orb/transport/connectioncache/outbound", connectionCache ) ;
 
@@ -135,9 +130,7 @@ public class TransportManagerImpl
                         connectionCache = 
                             new InboundConnectionCacheImpl(orb,
                                                                 acceptor);
-                        if (orb.mom() != null) {
-                            orb.mom().register( this, connectionCache ) ;
-                        }
+                        orb.mom().register( this, connectionCache ) ;
                         StatsProviderManager.register( "orb", PluginPoint.SERVER,
                             "orb/transport/connectioncache/inbound", connectionCache ) ;
 

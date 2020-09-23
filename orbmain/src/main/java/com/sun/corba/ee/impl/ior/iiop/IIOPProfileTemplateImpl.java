@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.impl.ior.iiop;
 
@@ -55,13 +54,7 @@ public class IIOPProfileTemplateImpl extends TaggedProfileTemplateBase
         StringBuilder sb = new StringBuilder() ;
         sb.append( "IIOPProfileTemplateImpl[giopVersion=") ;
         sb.append(giopVersion.getMajor()).append('.').append(giopVersion.getMinor()) ;
-        sb.append( " primary");
-        if(primary instanceof IIOPAddressImplLocalServer) {
-            IIOPAddressImplLocalServer localPrimary = (IIOPAddressImplLocalServer)primary;
-            sb.append(String.format("[origDelegateHost = %s]", localPrimary.getDelegateHost()));
-            sb.append("[LOCAL]");
-        }
-        sb.append("=") ;
+        sb.append( " primary=" ) ;
         sb.append(primary.getHost()).append(':').append(primary.getPort()) ;
         sb.append( ']' ) ;
         return sb.toString() ;
@@ -114,7 +107,7 @@ public class IIOPProfileTemplateImpl extends TaggedProfileTemplateBase
         byte major = istr.read_octet() ;
         byte minor = istr.read_octet() ;
         giopVersion = GIOPVersion.getInstance( major, minor ) ;
-        primary = IIOPFactories.makeIIOPAddress(istr, orb);
+        primary = new IIOPAddressImpl( istr ) ;
         orb = (ORB)(istr.orb()) ;
         // Handle any tagged components (if applicable)
         if (minor > 0) 

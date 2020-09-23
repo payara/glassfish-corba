@@ -452,7 +452,7 @@ public class SelectorImpl
         Throwable throwable = null;
         try {
             orb.getThreadPoolManager().getThreadPool(0)
-                .getWorkQueue(0).addWork((Work)listenerThread, true);
+                .getWorkQueue(0).addWork((Work)listenerThread);
         } catch (NoSuchThreadPoolException e) {
             throwable = e;
         } catch (NoSuchWorkQueueException e) {

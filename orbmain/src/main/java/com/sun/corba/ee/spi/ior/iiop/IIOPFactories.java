@@ -7,7 +7,6 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.spi.ior.iiop ;
 
@@ -27,6 +26,7 @@ import com.sun.corba.ee.spi.orb.ORB ;
 
 import com.sun.corba.ee.spi.folb.ClusterInstanceInfo ;
 
+import com.sun.corba.ee.impl.encoding.MarshalInputStream ;
 
 import com.sun.corba.ee.impl.ior.iiop.IIOPAddressImpl ;
 import com.sun.corba.ee.impl.ior.iiop.CodeSetsComponentImpl ;
@@ -40,7 +40,7 @@ import com.sun.corba.ee.impl.ior.iiop.IIOPProfileTemplateImpl ;
 import com.sun.corba.ee.impl.ior.iiop.RequestPartitioningComponentImpl ;
 import com.sun.corba.ee.impl.ior.iiop.LoadBalancingComponentImpl ;
 import com.sun.corba.ee.impl.ior.iiop.ClusterInstanceInfoComponentImpl ;
-import com.sun.corba.ee.impl.ior.iiop.IIOPAddressImplLocalServer;
+import com.sun.corba.ee.spi.misc.ORBConstants;
 import com.sun.corba.ee.spi.misc.ORBConstants;
 
 import org.omg.IOP.TAG_ALTERNATE_IIOP_ADDRESS ;
@@ -262,35 +262,9 @@ public abstract class IIOPFactories {
     {
         return new IIOPAddressImpl( host, port ) ;
     }
-    
-    /**
-     * Overridable on Tx (Thread-local) basis
-     * 
-     * @param orb
-     * @param host
-     * @param port
-     * @return IIOP Address
-     */
-    public static IIOPAddress makeIIOPAddressLocalServer(ORB orb, String host, int port) {
-        return isMultiHomedHostOverride(orb, host)?
-                new IIOPAddressImplLocalServer(host, port) : new IIOPAddressImpl(host, port);
-    }
 
-    public static IIOPAddress makeIIOPAddress(InputStream is) {
-        return new IIOPAddressImpl(is);
-    }
-    
-    public static IIOPAddress makeIIOPAddress( InputStream is, ORB orb )
+    public static IIOPAddress makeIIOPAddress( InputStream is ) 
     {
-        IIOPAddressImpl impl = new IIOPAddressImpl(is);
-        return isMultiHomedHostOverride(orb, impl.getHost())? new IIOPAddressImplLocalServer(impl) : impl;
-    }
-
-    static boolean isMultiHomedHostOverride(ORB orb, String host) {
-        return !isInitialHostSpecified(orb) && orb.isLocalHost(host);
-    }
-
-    static boolean isInitialHostSpecified(ORB orb) {
-        return !orb.getORBData().getListenOnAllInterfaces();
+        return new IIOPAddressImpl( is ) ;
     }
 }
