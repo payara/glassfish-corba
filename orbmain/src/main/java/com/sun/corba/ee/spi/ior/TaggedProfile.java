@@ -7,10 +7,10 @@
  *
  * SPDX-License-Identifier: BSD-3-Clause
  */
-// Portions Copyright [2016-2017] [Payara Foundation and/or its affiliates]
 
 package com.sun.corba.ee.spi.ior;
 
+import com.sun.corba.ee.spi.orb.ORB ;
 
 import org.glassfish.gmbal.ManagedData ;
 import org.glassfish.gmbal.IncludeSubclass ;
@@ -62,10 +62,4 @@ public interface TaggedProfile extends Identifiable, MakeImmutable
      *  Caches the result.
      */
     boolean isLocal() ;
-
-    /**
-     * used for multi-homed support
-     * @return if profile is stale with regards to thread-local connection address
-     */
-    public boolean isStale();
 }
